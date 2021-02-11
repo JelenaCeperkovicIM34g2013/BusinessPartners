@@ -1,0 +1,84 @@
+_schema-version: "3.2"
+ID: ns
+description: Fiori elements app
+version: 0.0.1
+modules:
+- name: ns-router
+  type: approuter.nodejs
+  path: cf/router
+  requires:
+  - name: ns-html5-repo-runtime
+  - name: ns-uaa
+  - name: ns-destination
+    group: destinations
+    properties:
+      forwardAuthToken: false
+      name: ui5
+      url: https://ui5.sap.com
+  - name: ns-connectivity
+  parameters:
+    disk-quota: 256M
+    memory: 256M
+    routes:
+    - route: https://ns-${org}-${space}.${default-domain}
+- name: ns-deployer
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: ns-html5-repo-host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - nsbusinesspartners.zip
+      name: nsbusinesspartners
+      target-path: resources/
+- name: nsbusinesspartners
+  type: html5
+  path: businesspartners
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+resources:
+- name: ns-uaa
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      tenant-mode: dedicated
+      xsappname: ns-${org}
+    service: xsuaa
+    service-plan: application
+- name: ns-html5-repo-runtime
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-plan: app-runtime
+- name: ns-destination
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: destination
+    service-plan: lite
+- name: ns-html5-repo-host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-plan: app-host
+- name: ns-connectivity
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: connectivity
+    service-plan: lite
+parameters:
+  deploy_mode: html5-repo
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+  - builder: custom
+    commands:
+    - npm install
